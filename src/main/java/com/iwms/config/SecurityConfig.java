@@ -47,7 +47,7 @@ public class SecurityConfig {
                 // ============================
                 // AUTHORIZATION RULES
                 // ============================
-
+//access to frontend
                 .authorizeHttpRequests(auth -> auth
 
                         // Public APIs

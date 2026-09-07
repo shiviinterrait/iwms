@@ -1,5 +1,7 @@
 package com.iwms.module.auth.controller;
 
+import com.iwms.module.auth.dto.AuthResponse;
+import com.iwms.module.auth.dto.LoginRequest;
 import com.iwms.module.auth.dto.RegisterRequest;
 import com.iwms.module.auth.dto.UserResponse;
 import com.iwms.module.auth.service.AuthService;
@@ -8,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@CrossOrigin(origins = "http://localhost:4200")
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
@@ -28,4 +31,13 @@ public class AuthController {
                 .status(HttpStatus.CREATED)
                 .body(response);
     }
+    @PostMapping("/login")
+    public ResponseEntity<AuthResponse> login(
+            @Valid @RequestBody LoginRequest request) {
+
+        AuthResponse response = authService.login(request);
+
+        return ResponseEntity.ok(response);
+    }
+
 }

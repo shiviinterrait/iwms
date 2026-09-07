@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.util.UUID;
+
 @Getter
 @Builder
 @AllArgsConstructor
@@ -11,7 +13,7 @@ public class AuthResponse {
 
     private String accessToken;
     private String tokenType;
-    private Long userId;
+    private UUID userId;
     private String username;
     private String email;
 }

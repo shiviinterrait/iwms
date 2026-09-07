@@ -1,15 +1,17 @@
 package com.iwms.module.role.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
+import lombok.*;
+
+import java.util.UUID;
 
 @Getter
-@AllArgsConstructor
+@Setter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class RoleResponse {
 
-    private Long id;
+    private UUID id;
     private String roleName;
     private String description;
 }

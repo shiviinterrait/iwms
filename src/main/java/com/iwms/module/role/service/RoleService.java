@@ -15,13 +15,21 @@ public class RoleService {
     private final RoleRepository roleRepository;
     private final RoleMapper roleMapper;
 
-    public RoleService(RoleRepository roleRepository,
-                       RoleMapper roleMapper) {
+    public RoleService(
+            RoleRepository roleRepository,
+            RoleMapper roleMapper) {
+
         this.roleRepository = roleRepository;
         this.roleMapper = roleMapper;
     }
 
     public RoleResponse createRole(RoleRequest request) {
+
+        if (roleRepository.existsByRoleName(request.getRoleName())) {
+            throw new RuntimeException(
+                    "Role already exists: " + request.getRoleName()
+            );
+        }
 
         Role role = roleMapper.toEntity(request);
 
@@ -36,40 +44,5 @@ public class RoleService {
                 .stream()
                 .map(roleMapper::toResponse)
                 .toList();
-    }
-
-    public RoleResponse getRoleById(Long id) {
-
-        Role role = roleRepository.findById(id)
-                .orElseThrow(() ->
-                        new RuntimeException("Role not found with id: " + id)
-                );
-
-        return roleMapper.toResponse(role);
-    }
-
-    public RoleResponse updateRole(Long id, RoleRequest request) {
-
-        Role role = roleRepository.findById(id)
-                .orElseThrow(() ->
-                        new RuntimeException("Role not found with id: " + id)
-                );
-
-        role.setRoleName(request.getRoleName());
-        role.setDescription(request.getDescription());
-
-        Role updatedRole = roleRepository.save(role);
-
-        return roleMapper.toResponse(updatedRole);
-    }
-
-    public void deleteRole(Long id) {
-
-        Role role = roleRepository.findById(id)
-                .orElseThrow(() ->
-                        new RuntimeException("Role not found with id: " + id)
-                );
-
-        roleRepository.delete(role);
     }
 }

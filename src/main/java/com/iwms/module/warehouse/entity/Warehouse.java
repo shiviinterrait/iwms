@@ -1,6 +1,5 @@
-package com.iwms.module.auth.entity;
+package com.iwms.module.warehouse.entity;
 
-import com.iwms.module.role.entity.Role;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -8,43 +7,44 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "users")
+@Table(name = "warehouses")
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class User {
+public class Warehouse {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @Column(nullable = false, unique = true)
-    private String username;
-
-    @Column(nullable = false, unique = true)
-    private String email;
+    private String code;
 
     @Column(nullable = false)
-    private String password;
+    private String name;
+
+    @Column
+    private String address;
+
+    @Column
+    private String city;
+
+    @Column
+    private String state;
+
+    @Column
+    private String pincode;
 
     @Column(nullable = false)
     private Boolean active;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "role_id", nullable = false)
-    private Role role;
-
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "last_login_at")
-    private LocalDateTime lastLoginAt;
-
     @PrePersist
     protected void onCreate() {
-
         createdAt = LocalDateTime.now();
 
         if (active == null) {

@@ -3,68 +3,174 @@ package com.iwms.config;
 import com.iwms.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
-@EnableMethodSecurity
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    public SecurityConfig(
-            JwtAuthenticationFilter jwtAuthenticationFilter) {
-
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
-    // ============================
-    // SECURITY FILTER CHAIN
-    // ============================
-
     @Bean
-    public SecurityFilterChain securityFilterChain(
-            HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http)
+            throws Exception {
 
         http
-                // Disable CSRF because we are using REST APIs
                 .csrf(csrf -> csrf.disable())
 
-                // JWT based authentication is stateless
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(
                                 SessionCreationPolicy.STATELESS
                         )
                 )
 
-                // ============================
-                // AUTHORIZATION RULES
-                // ============================
-//access to frontend
                 .authorizeHttpRequests(auth -> auth
 
-                        // Public APIs
+                        // ============================
+                        // AUTH
+                        // ============================
+
                         .requestMatchers(
                                 "/api/v1/auth/register",
-                                "/api/v1/auth/login",
-                                "/swagger-ui.html",
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**"
+                                "/api/v1/auth/login"
                         ).permitAll()
 
-                        // All other APIs require authentication
+
+                        // ============================
+                        // WAREHOUSE
+                        // ============================
+
+                        // GET → ADMIN + MANAGER + STAFF
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/v1/warehouses/**"
+                        ).hasAnyRole(
+                                "ADMIN",
+                                "MANAGER",
+                                "STAFF"
+                        )
+
+                        // POST → ADMIN + MANAGER
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/v1/warehouses/**"
+                        ).hasAnyRole(
+                                "ADMIN",
+                                "MANAGER"
+                        )
+
+                        // PUT → ADMIN + MANAGER
+                        .requestMatchers(
+                                HttpMethod.PUT,
+                                "/api/v1/warehouses/**"
+                        ).hasAnyRole(
+                                "ADMIN",
+                                "MANAGER"
+                        )
+
+                        // DELETE → ADMIN only
+                        .requestMatchers(
+                                HttpMethod.DELETE,
+                                "/api/v1/warehouses/**"
+                        ).hasRole("ADMIN")
+
+
+                        // ============================
+                        // PRODUCTS
+                        // ============================
+
+                        // GET → ADMIN + MANAGER + STAFF
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/v1/products/**"
+                        ).hasAnyRole(
+                                "ADMIN",
+                                "MANAGER",
+                                "STAFF"
+                        )
+
+                        // POST → ADMIN + MANAGER
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/v1/products/**"
+                        ).hasAnyRole(
+                                "ADMIN",
+                                "MANAGER"
+                        )
+
+                        // PUT → ADMIN + MANAGER
+                        .requestMatchers(
+                                HttpMethod.PUT,
+                                "/api/v1/products/**"
+                        ).hasAnyRole(
+                                "ADMIN",
+                                "MANAGER"
+                        )
+
+                        // DELETE → ADMIN only
+                        .requestMatchers(
+                                HttpMethod.DELETE,
+                                "/api/v1/products/**"
+                        ).hasRole("ADMIN")
+
+
+                        // ============================
+                        // SUPPLIERS
+                        // ============================
+
+                        // GET → ADMIN + MANAGER
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/v1/suppliers/**"
+                        ).hasAnyRole(
+                                "ADMIN",
+                                "MANAGER"
+                        )
+
+                        // POST → ADMIN + MANAGER
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/v1/suppliers/**"
+                        ).hasAnyRole(
+                                "ADMIN",
+                                "MANAGER"
+                        )
+
+                        // PUT → ADMIN + MANAGER
+                        .requestMatchers(
+                                HttpMethod.PUT,
+                                "/api/v1/suppliers/**"
+                        ).hasAnyRole(
+                                "ADMIN",
+                                "MANAGER"
+                        )
+
+                        // DELETE → ADMIN only
+                        .requestMatchers(
+                                HttpMethod.DELETE,
+                                "/api/v1/suppliers/**"
+                        ).hasRole("ADMIN")
+
+
+                        // ============================
+                        // OTHER APIs
+                        // ============================
+
+                        // Everything else requires login
                         .anyRequest().authenticated()
                 )
 
-                // Add JWT filter before Spring's
-                // UsernamePasswordAuthenticationFilter
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
@@ -73,19 +179,10 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // ============================
-    // PASSWORD ENCODER
-    // ============================
-
     @Bean
     public PasswordEncoder passwordEncoder() {
-
         return new BCryptPasswordEncoder();
     }
-
-    // ============================
-    // AUTHENTICATION MANAGER
-    // ============================
 
     @Bean
     public AuthenticationManager authenticationManager(

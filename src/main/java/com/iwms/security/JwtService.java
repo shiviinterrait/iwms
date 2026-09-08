@@ -1,8 +1,10 @@
-//JWT token generate karna
-//Token se email extract karna
-//Token validate karna
-//Token expiry check karna
 package com.iwms.security;
+
+// JWT token generate karna
+// Token se email extract karna
+// Token se roles extract karna
+// Token validate karna
+// Token expiry check karna
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -12,6 +14,7 @@ import org.springframework.stereotype.Service;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.List;
 
 @Service
 public class JwtService {
@@ -35,7 +38,7 @@ public class JwtService {
 
     public String generateToken(
             String email,
-            String role) {
+            List<String> roles) {
 
         Date now = new Date();
 
@@ -45,7 +48,7 @@ public class JwtService {
 
         return Jwts.builder()
                 .subject(email)
-                .claim("role", role)
+                .claim("roles", roles)
                 .issuedAt(now)
                 .expiration(expiry)
                 .signWith(getSigningKey())
@@ -68,10 +71,10 @@ public class JwtService {
     }
 
     // ============================
-    // EXTRACT ROLE
+    // EXTRACT ROLES
     // ============================
 
-    public String extractRole(String token) {
+    public List<String> extractRoles(String token) {
 
         Claims claims = Jwts.parser()
                 .verifyWith(getSigningKey())
@@ -79,7 +82,7 @@ public class JwtService {
                 .parseSignedClaims(token)
                 .getPayload();
 
-        return claims.get("role", String.class);
+        return claims.get("roles", List.class);
     }
 
     // ============================
@@ -102,6 +105,10 @@ public class JwtService {
             return false;
         }
     }
+
+    // ============================
+    // CHECK TOKEN EXPIRY
+    // ============================
 
     private boolean isTokenExpired(String token) {
 

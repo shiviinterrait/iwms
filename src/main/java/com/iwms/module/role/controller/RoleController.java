@@ -1,15 +1,15 @@
 package com.iwms.module.role.controller;
 
-import com.iwms.module.role.dto.RoleRequest;
-import com.iwms.module.role.dto.RoleResponse;
+import com.iwms.module.role.dto.AssignRoleRequest;
+import com.iwms.module.role.entity.UserRole;
 import com.iwms.module.role.service.RoleService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import com.iwms.module.role.dto.UserRolesResponse;
 import java.util.List;
-
+import java.util.UUID;
+import com.iwms.module.role.dto.UserRoleResponse;
 @RestController
 @RequestMapping("/api/v1/roles")
 public class RoleController {
@@ -20,22 +20,40 @@ public class RoleController {
         this.roleService = roleService;
     }
 
-    @PostMapping
-    public ResponseEntity<RoleResponse> createRole(
-            @Valid @RequestBody RoleRequest request) {
+    // ============================
+    // ASSIGN ROLE TO USER
+    // ============================
 
-        RoleResponse response = roleService.createRole(request);
+    @PostMapping("/users/{userId}/assign")
+    @ResponseStatus(HttpStatus.CREATED)
+    public UserRole assignRole(
+            @PathVariable UUID userId,
+            @Valid @RequestBody AssignRoleRequest request) {
 
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(response);
+        return roleService.assignRole(userId, request);
     }
 
-    @GetMapping
-    public ResponseEntity<List<RoleResponse>> getAllRoles() {
+    // ============================
+    // REMOVE ROLE FROM USER
+    // ============================
 
-        return ResponseEntity.ok(
-                roleService.getAllRoles()
-        );
+    @DeleteMapping("/users/{userId}/{roleName}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void removeRole(
+            @PathVariable UUID userId,
+            @PathVariable String roleName) {
+
+        roleService.removeRole(userId, roleName);
+    }
+    @GetMapping("/users/{userId}")
+    public List<UserRoleResponse> getUserRoles(
+            @PathVariable UUID userId) {
+
+        return roleService.getUserRoles(userId);
+    }
+    @GetMapping("/users")
+    public List<UserRolesResponse> getAllUsersWithRoles() {
+
+        return roleService.getAllUsersWithRoles();
     }
 }

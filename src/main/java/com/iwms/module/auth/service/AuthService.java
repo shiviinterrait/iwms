@@ -9,7 +9,9 @@ import com.iwms.module.auth.entity.User;
 import com.iwms.module.auth.mapper.UserMapper;
 import com.iwms.module.auth.repository.UserRepository;
 import com.iwms.module.role.entity.Role;
+import com.iwms.module.role.entity.UserRole;
 import com.iwms.module.role.repository.RoleRepository;
+import com.iwms.module.role.repository.UserRoleRepository;
 import com.iwms.security.JwtService;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -18,6 +20,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class AuthService {
@@ -28,6 +31,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final RoleRepository roleRepository;
+    private final UserRoleRepository userRoleRepository;
 
     public AuthService(
             UserRepository userRepository,
@@ -35,7 +39,8 @@ public class AuthService {
             PasswordEncoder passwordEncoder,
             AuthenticationManager authenticationManager,
             JwtService jwtService,
-            RoleRepository roleRepository) {
+            RoleRepository roleRepository,
+            UserRoleRepository userRoleRepository) {
 
         this.userRepository = userRepository;
         this.userMapper = userMapper;
@@ -43,6 +48,7 @@ public class AuthService {
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
         this.roleRepository = roleRepository;
+        this.userRoleRepository = userRoleRepository;
     }
 
     // ============================
@@ -63,21 +69,34 @@ public class AuthService {
             );
         }
 
-        // Find default USER role
-        Role userRole = roleRepository.findByRoleName("USER")
+        // New users will get STAFF role by default
+        Role staffRole = roleRepository.findByRoleName("STAFF")
                 .orElseThrow(() ->
-                        new RuntimeException("USER role not found")
+                        new RuntimeException("STAFF role not found")
                 );
 
+        // Create user
         User user = User.builder()
                 .username(request.getUsername())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .active(true)
-                .role(userRole)
                 .build();
 
         User savedUser = userRepository.save(user);
+
+        // Create STAFF role assignment
+        UserRole userRole = UserRole.builder()
+                .user(savedUser)
+                .role(staffRole)
+                .roleName(staffRole.getRoleName())
+                .userEmail(savedUser.getEmail())
+                .isAdmin(false)
+                .isStaff(true)
+                .isManager(false)
+                .build();
+
+        userRoleRepository.save(userRole);
 
         return userMapper.toResponse(savedUser);
     }
@@ -107,9 +126,19 @@ public class AuthService {
 
         userRepository.save(user);
 
+        // Get all roles assigned to this user
+        List<UserRole> userRoles =
+                userRoleRepository.findByUser(user);
+
+        List<String> roles = userRoles.stream()
+                .map(UserRole::getRoleName)
+                .distinct()
+                .toList();
+
+        // Generate JWT with multiple roles
         String token = jwtService.generateToken(
                 user.getEmail(),
-                user.getRole().getRoleName()
+                roles
         );
 
         return AuthResponse.builder()
@@ -118,6 +147,7 @@ public class AuthService {
                 .userId(user.getId())
                 .username(user.getUsername())
                 .email(user.getEmail())
+                .roles(roles)
                 .build();
     }
 }

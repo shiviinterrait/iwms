@@ -6,8 +6,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
-import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -19,23 +20,43 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.List;
 
 @Configuration
+@EnableMethodSecurity
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+    public SecurityConfig(
+            JwtAuthenticationFilter jwtAuthenticationFilter) {
+
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
+    // ============================
+    // SECURITY FILTER CHAIN
+    // ============================
+
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http)
-            throws Exception {
+    public SecurityFilterChain securityFilterChain(
+            HttpSecurity http) throws Exception {
 
         http
+                // ============================
+                // CSRF
+                // ============================
+
                 .csrf(csrf -> csrf.disable())
 
-                // Enable CORS
-                .cors(cors -> {})
+                // ============================
+                // CORS
+                // ============================
+
+                .cors(cors -> cors.configurationSource(
+                        corsConfigurationSource()
+                ))
+
+                // ============================
+                // SESSION
+                // ============================
 
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(
@@ -43,15 +64,22 @@ public class SecurityConfig {
                         )
                 )
 
+                // ============================
+                // AUTHORIZATION
+                // ============================
+
                 .authorizeHttpRequests(auth -> auth
 
                         // ============================
-                        // AUTH
+                        // PUBLIC APIs
                         // ============================
 
                         .requestMatchers(
                                 "/api/v1/auth/register",
-                                "/api/v1/auth/login"
+                                "/api/v1/auth/login",
+                                "/swagger-ui.html",
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**"
                         ).permitAll()
 
 
@@ -59,6 +87,7 @@ public class SecurityConfig {
                         // WAREHOUSE
                         // ============================
 
+                        // GET → ADMIN + MANAGER + STAFF
                         .requestMatchers(
                                 HttpMethod.GET,
                                 "/api/v1/warehouses/**"
@@ -68,6 +97,7 @@ public class SecurityConfig {
                                 "STAFF"
                         )
 
+                        // POST → ADMIN + MANAGER
                         .requestMatchers(
                                 HttpMethod.POST,
                                 "/api/v1/warehouses/**"
@@ -76,6 +106,7 @@ public class SecurityConfig {
                                 "MANAGER"
                         )
 
+                        // PUT → ADMIN + MANAGER
                         .requestMatchers(
                                 HttpMethod.PUT,
                                 "/api/v1/warehouses/**"
@@ -84,6 +115,7 @@ public class SecurityConfig {
                                 "MANAGER"
                         )
 
+                        // DELETE → ADMIN only
                         .requestMatchers(
                                 HttpMethod.DELETE,
                                 "/api/v1/warehouses/**"
@@ -94,6 +126,7 @@ public class SecurityConfig {
                         // PRODUCTS
                         // ============================
 
+                        // GET → ADMIN + MANAGER + STAFF
                         .requestMatchers(
                                 HttpMethod.GET,
                                 "/api/v1/products/**"
@@ -103,6 +136,7 @@ public class SecurityConfig {
                                 "STAFF"
                         )
 
+                        // POST → ADMIN + MANAGER
                         .requestMatchers(
                                 HttpMethod.POST,
                                 "/api/v1/products/**"
@@ -111,6 +145,7 @@ public class SecurityConfig {
                                 "MANAGER"
                         )
 
+                        // PUT → ADMIN + MANAGER
                         .requestMatchers(
                                 HttpMethod.PUT,
                                 "/api/v1/products/**"
@@ -119,6 +154,7 @@ public class SecurityConfig {
                                 "MANAGER"
                         )
 
+                        // DELETE → ADMIN only
                         .requestMatchers(
                                 HttpMethod.DELETE,
                                 "/api/v1/products/**"
@@ -129,6 +165,7 @@ public class SecurityConfig {
                         // SUPPLIERS
                         // ============================
 
+                        // GET → ADMIN + MANAGER
                         .requestMatchers(
                                 HttpMethod.GET,
                                 "/api/v1/suppliers/**"
@@ -137,6 +174,7 @@ public class SecurityConfig {
                                 "MANAGER"
                         )
 
+                        // POST → ADMIN + MANAGER
                         .requestMatchers(
                                 HttpMethod.POST,
                                 "/api/v1/suppliers/**"
@@ -145,6 +183,7 @@ public class SecurityConfig {
                                 "MANAGER"
                         )
 
+                        // PUT → ADMIN + MANAGER
                         .requestMatchers(
                                 HttpMethod.PUT,
                                 "/api/v1/suppliers/**"
@@ -153,6 +192,7 @@ public class SecurityConfig {
                                 "MANAGER"
                         )
 
+                        // DELETE → ADMIN only
                         .requestMatchers(
                                 HttpMethod.DELETE,
                                 "/api/v1/suppliers/**"
@@ -160,11 +200,15 @@ public class SecurityConfig {
 
 
                         // ============================
-                        // OTHER APIs
+                        // ALL OTHER APIs
                         // ============================
 
                         .anyRequest().authenticated()
                 )
+
+                // ============================
+                // JWT FILTER
+                // ============================
 
                 .addFilterBefore(
                         jwtAuthenticationFilter,
@@ -181,6 +225,7 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
+
         return new BCryptPasswordEncoder();
     }
 
@@ -205,7 +250,8 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
 
-        CorsConfiguration configuration = new CorsConfiguration();
+        CorsConfiguration configuration =
+                new CorsConfiguration();
 
         // Angular frontend URL
         configuration.setAllowedOrigins(

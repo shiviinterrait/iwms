@@ -23,8 +23,8 @@ public class RoleSeeder implements CommandLineRunner {
         );
 
         createRole(
-                "USER",
-                "Normal system user"
+                "STAFF",
+                "Staff with standard system access"
         );
 
         createRole(
